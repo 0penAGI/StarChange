@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSDC Cosmic Tycoon</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --primary-color: #1a1a2e;
+            --secondary-color: #16213e;
+            --accent-color: #0f3460;
+            --highlight-color: #e94560;
+            --text-color: #ffffff;
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 16px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #4cc9f0, #4361ee, #7209b7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--border-radius);
+            padding: 16px;
+            margin-bottom: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: var(--transition);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card-title {
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .balance-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .balance-item {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: var(--border-radius);
+            padding: 12px;
+            text-align: center;
+        }
+        
+        .balance-amount {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+        
+        .balance-currency {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .action-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            border-radius: var(--border-radius);
+            color: var(--text-color);
+            padding: 14px 10px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.03);
+        }
+        
+        .action-btn.primary {
+            background: var(--highlight-color);
+        }
+        
+        .action-btn.primary:hover {
+            background: #ff2e4f;
+        }
+        
+        .action-icon {
+            font-size: 1.5rem;
+        }
+        
+        .market-section {
+            margin-bottom: 20px;
+        }
+        
+        .market-rates {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .rate-item {
+            background: rgba(255, 255, 255, 0.07);
+            border-radius: var(--border-radius);
+            padding: 10px;
+            text-align: center;
+        }
+        
+        .rate-value {
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .history-section {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .history-item {
+            padding: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .error {
+            color: var(--highlight-color);
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+        
+        .modal-content {
+            background: var(--primary-color);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+        }
+        
+        .form-input, .form-select {
+            width: 100%;
+            padding: 12px;
+            border-radius: var(--border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            font-size: 1rem;
+        }
+        
+        .form-input:focus, .form-select:focus {
+            outline: none;
+            border-color: var(--highlight-color);
+        }
+        
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: var(--border-radius);
+            background: var(--highlight-color);
+            color: var(--text-color);
+            font-size: 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        
+        .submit-btn:hover {
+            background: #ff2e4f;
+        }
+        
+        .tab-container {
+            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 16px;
+        }
+        
+        .tab {
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: var(--transition);
+        }
+        
+        .tab.active {
+            border-bottom: 2px solid var(--highlight-color);
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @media (min-width: 768px) {
+            .container {
+                max-width: 600px;
+            }
+            
+            .actions-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌌 XSDC Cosmic Tycoon</h1>
+            <p>Trade, create currencies, unleash chaos!</p>
+        </div>
+        
+        <div id="loading" class="loading">
+            <p>Loading your cosmic empire...</p>
+        </div>
+        
+        <div id="app" class="hidden">
+            <div class="card">
+                <div class="card-title">💰 Your Balance</div>
+                <div id="balance-section" class="balance-section">
+                    <!-- Balance items will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">⚡ Quick Actions</div>
+                <div class="actions-grid">
+                    <button class="action-btn" onclick="showFarmModal()">
+                        <span class="action-icon">🌱</span>
+                        <span>Farm</span>
+                    </button>
+                    <button class="action-btn" onclick="showTradeModal()">
+                        <span class="action-icon">🤝</span>
+                        <span>Trade</span>
+                    </button>
+                    <button class="action-btn" onclick="showConvertModal()">
+                        <span class="action-icon">🔄</span>
+                        <span>Convert</span>
+                    </button>
+                    <button class="action-btn" onclick="showShopModal()">
+                        <span class="action-icon">🛍️</span>
+                        <span>Shop</span>
+                    </button>
+                    <button class="action-btn" onclick="showChallengesModal()">
+                        <span class="action-icon">🏆</span>
+                        <span>Challenges</span>
+                    </button>
+                    <button class="action-btn primary" onclick="claimFreeCoins()">
+                        <span class="action-icon">🎁</span>
+                        <span>Free Coins</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📊 Market Rates</div>
+                <div id="market-rates" class="market-rates">
+                    <!-- Market rates will be populated by JavaScript -->
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-title">📜 Recent Activity</div>
+                <div id="history-section" class="history-section">
+                    <!-- History items will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <div id="error-message" class="error hidden">
+            <!-- Error messages will be displayed here -->
+        </div>
+    </div>
+    
+    <!-- Farm Modal -->
+    <div id="farm-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🌱 Farm Coins</h2>
+                <button class="close-btn" onclick="closeModal('farm-modal')">&times;</button>
+            </div>
+            <p>Collect your daily farm rewards!</p>
+            <button class="submit-btn" onclick="farmCoins()">Harvest Coins</button>
+        </div>
+    </div>
+    
+    <!-- Trade Modal -->
+    <div id="trade-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🤝 Trade</h2>
+                <button class="close-btn" onclick="closeModal('trade-modal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Recipient Username</label>
+                <input type="text" id="trade-recipient" class="form-input" placeholder="@username">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" id="trade-amount" class="form-input" placeholder="1000">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Currency</label>
+                <select id="trade-currency" class="form-select">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Recipient Currency</label>
+                <select id="trade-recipient-currency" class="form-select">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <button class="submit-btn" onclick="sendTrade()">Send Trade Offer</button>
+        </div>
+    </div>
+    
+    <!-- Convert Modal -->
+    <div id="convert-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🔄 Convert Currency</h2>
+                <button class="close-btn" onclick="closeModal('convert-modal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label">From Currency</label>
+                <select id="convert-from" class="form-select">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">To Currency</label>
+                <select id="convert-to" class="form-select">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">Amount</label>
+                <input type="number" id="convert-amount" class="form-input" placeholder="1000">
+            </div>
+            <button class="submit-btn" onclick="convertCurrency()">Convert</button>
+        </div>
+    </div>
+    
+    <!-- Shop Modal -->
+    <div id="shop-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🛍️ Cosmic Shop</h2>
+                <button class="close-btn" onclick="closeModal('shop-modal')">&times;</button>
+            </div>
+            <div class="tab-container">
+                <div class="tabs">
+                    <div class="tab active" onclick="switchTab('shop-items')">Items</div>
+                    <div class="tab" onclick="switchTab('shop-boosts')">Boosts</div>
+                    <div class="tab" onclick="switchTab('shop-nfts')">NFTs</div>
+                </div>
+                
+                <div id="shop-items" class="tab-content active">
+                    <!-- Shop items will be populated by JavaScript -->
+                </div>
+                
+                <div id="shop-boosts" class="tab-content">
+                    <!-- Boosts will be populated by JavaScript -->
+                </div>
+                
+                <div id="shop-nfts" class="tab-content">
+                    <!-- NFTs will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Challenges Modal -->
+    <div id="challenges-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>🏆 Challenges</h2>
+                <button class="close-btn" onclick="closeModal('challenges-modal')">&times;</button>
+            </div>
+            <div id="challenges-list">
+                <!-- Challenges will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Telegram WebApp initialization
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+        
+        // Global state
+        let userData = null;
+        let exchangeRates = {};
+        
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get init data from Telegram
+            const initData = tg.initData;
+            
+            if (initData) {
+                // In a real implementation, you would send this to your backend
+                // to verify and get user data
+                loadUserData();
+            } else {
+                showError("Failed to initialize WebApp");
+            }
+        });
+        
+        // Function to load user data (mock implementation)
+        function loadUserData() {
+            // In a real implementation, this would be an API call to your backend
+            // For now, we'll use mock data
+            
+            setTimeout(() => {
+                // Mock user data
+                userData = {
+                    userId: 123456789,
+                    username: "cosmic_trader",
+                    cashflow: {
+                        "XDUST": 12500,
+                        "STELLAR": 3500,
+                        "QUARK": 800,
+                        "VOID": 120,
+                        "CHANCE": 45,
+                        "XSDC": 10
+                    },
+                    primaryCurrency: "XDUST",
+                    exchangeRates: {
+                        "XDUST": 1.0,
+                        "STELLAR": 0.5,
+                        "QUARK": 2.0,
+                        "VOID": 0.1,
+                        "CHANCE": 5.0,
+                        "XSDC": 10.0
+                    },
+                    tradeHistory: [
+                        "🌱 Farmed: +555 XDUST",
+                        "🤝 Trade: 1000 XDUST → 500 STELLAR",
+                        "🎁 Claimed free coins: +1000 XDUST"
+                    ]
+                };
+                
+                exchangeRates = userData.exchangeRates;
+                
+                // Update UI with user data
+                updateBalanceDisplay();
+                updateMarketRates();
+                updateHistoryDisplay();
+                populateCurrencySelects();
+                
+                // Hide loading, show app
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('app').classList.remove('hidden');
+            }, 1000);
+        }
+        
+        // Update balance display
+        function updateBalanceDisplay() {
+            const balanceSection = document.getElementById('balance-section');
+            balanceSection.innerHTML = '';
+            
+            for (const [currency, amount] of Object.entries(userData.cashflow)) {
+                const balanceItem = document.createElement('div');
+                balanceItem.className = 'balance-item';
+                
+                balanceItem.innerHTML = `
+                    <div class="balance-currency">${currency}</div>
+                    <div class="balance-amount">${amount.toLocaleString()}</div>
+                `;
+                
+                balanceSection.appendChild(balanceItem);
+            }
+        }
+        
+        // Update market rates display
+        function updateMarketRates() {
+            const marketRates = document.getElementById('market-rates');
+            marketRates.innerHTML = '';
+            
+            for (const [currency, rate] of Object.entries(exchangeRates)) {
+                const rateItem = document.createElement('div');
+                rateItem.className = 'rate-item';
+                
+                rateItem.innerHTML = `
+                    <div>${currency}</div>
+                    <div class="rate-value">${rate.toFixed(2)}</div>
+                `;
+                
+                marketRates.appendChild(rateItem);
+            }
+        }
+        
+        // Update history display
+        function updateHistoryDisplay() {
+            const historySection = document.getElementById('history-section');
+            historySection.innerHTML = '';
+            
+            userData.tradeHistory.forEach(item => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                historyItem.textContent = item;
+                historySection.appendChild(historyItem);
+            });
+        }
+        
+        // Populate currency selects
+        function populateCurrencySelects() {
+            const currencySelects = [
+                'trade-currency',
+                'trade-recipient-currency',
+                'convert-from',
+                'convert-to'
+            ];
+            
+            currencySelects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                select.innerHTML = '';
+                
+                for (const currency in exchangeRates) {
+                    const option = document.createElement('option');
+                    option.value = currency;
+                    option.textContent = currency;
+                    select.appendChild(option);
+                }
+            });
+        }
+        
+        // Modal functions
+        function showFarmModal() {
+            document.getElementById('farm-modal').classList.remove('hidden');
+        }
+        
+        function showTradeModal() {
+            document.getElementById('trade-modal').classList.remove('hidden');
+        }
+        
+        function showConvertModal() {
+            document.getElementById('convert-modal').classList.remove('hidden');
+        }
+        
+        function showShopModal() {
+            document.getElementById('shop-modal').classList.remove('hidden');
+            populateShopItems();
+        }
+        
+        function showChallengesModal() {
+            document.getElementById('challenges-modal').classList.remove('hidden');
+            populateChallenges();
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+        
+        // Tab switching
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected tab content
+            document.getElementById(tabId).classList.add('active');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+        }
+        
+        // Action functions
+        function farmCoins() {
+            // In a real implementation, this would call your backend API
+            showNotification("🌱 Farmed: +555 XDUST");
+            userData.cashflow.XDUST += 555;
+            userData.tradeHistory.unshift("🌱 Farmed: +555 XDUST");
+            updateBalanceDisplay();
+            updateHistoryDisplay();
+            closeModal('farm-modal');
+        }
+        
+        function claimFreeCoins() {
+            // In a real implementation, this would call your backend API
+            showNotification("🎁 Claimed free coins: +1000 XDUST");
+            userData.cashflow.XDUST += 1000;
+            userData.tradeHistory.unshift("🎁 Claimed free coins: +1000 XDUST");
+            updateBalanceDisplay();
+            updateHistoryDisplay();
+        }
+        
+        function sendTrade() {
+            const recipient = document.getElementById('trade-recipient').value;
+            const amount = parseInt(document.getElementById('trade-amount').value);
+            const currency = document.getElementById('trade-currency').value;
+            const recipientCurrency = document.getElementById('trade-recipient-currency').value;
+            
+            if (!recipient || !amount || !currency || !recipientCurrency) {
+                showError("Please fill all fields");
+                return;
+            }
+            
+            if (userData.cashflow[currency] < amount) {
+                showError(`Insufficient ${currency}!`);
+                return;
+            }
+            
+            // In a real implementation, this would call your backend API
+            const convertedAmount = Math.floor(amount * exchangeRates[currency] / exchangeRates[recipientCurrency]);
+            
+            showNotification(`Trade offer sent to ${recipient}`);
+            userData.tradeHistory.unshift(`🤝 Trade offer: ${amount} ${currency} → ${convertedAmount} ${recipientCurrency} to ${recipient}`);
+            updateHistoryDisplay();
+            closeModal('trade-modal');
+            
+            // Clear form
+            document.getElementById('trade-recipient').value = '';
+            document.getElementById('trade-amount').value = '';
+        }
+        
+        function convertCurrency() {
+            const fromCurrency = document.getElementById('convert-from').value;
+            const toCurrency = document.getElementById('convert-to').value;
+            const amount = parseInt(document.getElementById('convert-amount').value);
+            
+            if (!fromCurrency || !toCurrency || !amount) {
+                showError("Please fill all fields");
+                return;
+            }
+            
+            if (userData.cashflow[fromCurrency] < amount) {
+                showError(`Insufficient ${fromCurrency}!`);
+                return;
+            }
+            
+            // In a real implementation, this would call your backend API
+            const convertedAmount = Math.floor(amount * exchangeRates[fromCurrency] / exchangeRates[toCurrency]);
+            
+            showNotification(`Converted: ${amount} ${fromCurrency} → ${convertedAmount} ${toCurrency}`);
+            userData.cashflow[fromCurrency] -= amount;
+            userData.cashflow[toCurrency] = (userData.cashflow[toCurrency] || 0) + convertedAmount;
+            userData.tradeHistory.unshift(`🔄 Converted: ${amount} ${fromCurrency} → ${convertedAmount} ${toCurrency}`);
+            
+            updateBalanceDisplay();
+            updateHistoryDisplay();
+            closeModal('convert-modal');
+            
+            // Clear form
+            document.getElementById('convert-amount').value = '';
+        }
+        
+        // Populate shop items
+        function populateShopItems() {
+            const shopItems = document.getElementById('shop-items');
+            shopItems.innerHTML = '';
+            
+            const items = [
+                { name: "Sticker Pack", cost: 5000, currency: "XDUST", desc: "Exclusive $XDUST Sticker Pack" },
+                { name: "Farm Boost", cost: 10000, currency: "XDUST", desc: "Double farm yield for 24h" },
+                { name: "Space Bush", cost: 25000, currency: "XDUST", desc: "+50% farm yield forever" },
+                { name: "Rare NFT", cost: 15000, currency: "XDUST", desc: "Rare Cosmic NFT" }
+            ];
+            
+            items.forEach(item => {
+                const itemElement = document.createElement('div');
+                itemElement.className = 'card';
+                itemElement.style.marginBottom = '10px';
+                
+                itemElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold;">${item.name}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.8;">${item.desc}</div>
+                        </div>
+                        <button class="action-btn" onclick="buyItem('${item.name}', ${item.cost}, '${item.currency}')" 
+                                ${userData.cashflow[item.currency] < item.cost ? 'disabled' : ''}>
+                            Buy (${item.cost.toLocaleString()} ${item.currency})
+                        </button>
+                    </div>
+                `;
+                
+                shopItems.appendChild(itemElement);
+            });
+        }
+        
+        // Populate challenges
+        function populateChallenges() {
+            const challengesList = document.getElementById('challenges-list');
+            challengesList.innerHTML = '';
+            
+            const challenges = [
+                { name: "Farm 3 Times", reward: 1000, currency: "XDUST", completed: true },
+                { name: "Complete 1 Trade", reward: 2000, currency: "XDUST", completed: false },
+                { name: "Convert 500 XDUST", reward: 1500, currency: "XDUST", completed: true },
+                { name: "Invite 3 Friends", reward: 5000, currency: "XDUST", completed: false }
+            ];
+            
+            challenges.forEach(challenge => {
+                const challengeElement = document.createElement('div');
+                challengeElement.className = 'card';
+                challengeElement.style.marginBottom = '10px';
+                
+                challengeElement.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-weight: bold;">${challenge.name}</div>
+                            <div style="font-size: 0.8rem; opacity: 0.8;">Reward: ${challenge.reward.toLocaleString()} ${challenge.currency}</div>
+                        </div>
+                        <button class="action-btn ${challenge.completed ? 'primary' : ''}" 
+                                onclick="claimChallenge('${challenge.name}', ${challenge.reward}, '${challenge.currency}')"
+                                ${!challenge.completed ? 'disabled' : ''}>
+                            ${challenge.completed ? 'Claim' : 'In Progress'}
+                        </button>
+                    </div>
+                `;
+                
+                challengesList.appendChild(challengeElement);
+            });
+        }
+        
+        // Buy item function
+        function buyItem(itemName, cost, currency) {
+            if (userData.cashflow[currency] < cost) {
+                showError(`Insufficient ${currency}!`);
+                return;
+            }
+            
+            // In a real implementation, this would call your backend API
+            userData.cashflow[currency] -= cost;
+            showNotification(`Purchased ${itemName} for ${cost.toLocaleString()} ${currency}`);
+            userData.tradeHistory.unshift(`🛍️ Purchased: ${itemName} for ${cost.toLocaleString()} ${currency}`);
+            
+            updateBalanceDisplay();
+            updateHistoryDisplay();
+            populateShopItems(); // Refresh shop to update button states
+        }
+        
+        // Claim challenge function
+        function claimChallenge(challengeName, reward, currency) {
+            // In a real implementation, this would call your backend API
+            userData.cashflow[currency] += reward;
+            showNotification(`Claimed ${challengeName}: +${reward.toLocaleString()} ${currency}`);
+            userData.tradeHistory.unshift(`🏆 Claimed: ${challengeName} - +${reward.toLocaleString()} ${currency}`);
+            
+            updateBalanceDisplay();
+            updateHistoryDisplay();
+            closeModal('challenges-modal');
+        }
+        
+        // Utility functions
+        function showNotification(message) {
+            // In a real implementation, you might use a toast library
+            // For now, we'll use alert
+            alert(message);
+        }
+        
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+            
+            setTimeout(() => {
+                errorElement.classList.add('hidden');
+            }, 5000);
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modals = document.getElementsByClassName('modal');
+            for (let i = 0; i < modals.length; i++) {
+                if (event.target === modals[i]) {
+                    modals[i].classList.add('hidden');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
